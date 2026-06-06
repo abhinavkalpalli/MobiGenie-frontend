@@ -208,10 +208,10 @@ export const authApi = {
     });
   },
 
-  resetPassword: async (email: string, password: string) => {
+  resetPassword: async (resetToken: string, password: string) => {
     return apiFetch('/auth/reset-password', {
       method: 'PATCH',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ resetToken, password }),
       skipGlobal401: true,
     });
   },

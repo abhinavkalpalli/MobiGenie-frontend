@@ -89,6 +89,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState("");
+  const [resetToken, setResetToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
@@ -244,7 +245,8 @@ function LoginForm() {
     if (otp.replace(/\s/g, "").length < 6) { setError("Enter the 6-digit OTP."); return; }
     setLoading(true);
     try {
-      await authApi.verifyResetOtp(email, otp);
+      const res = await authApi.verifyResetOtp(email, otp);
+      setResetToken((res as any).data?.resetToken ?? "");
       setOtp("");
       setScreen("forgot-reset");
     } catch (err) {
@@ -262,11 +264,12 @@ function LoginForm() {
     if (newPassword !== confirmNewPassword) { setError("Passwords do not match."); return; }
     setLoading(true);
     try {
-      await authApi.resetPassword(email, newPassword);
+      await authApi.resetPassword(resetToken, newPassword);
       setSuccess("Password reset! Please sign in.");
       setScreen("auth");
       setIsLogin(true);
       setEmail("");
+      setResetToken("");
       setNewPassword("");
       setConfirmNewPassword("");
     } catch (err) {
