@@ -101,7 +101,7 @@ export default function InputBox({ onSend, isStreaming, disabled }: Props) {
         </button>
       </div>
 
-      <p className="text-center mt-2 text-xs" style={{ color: "#ffffff" }}>
+      <p className="text-center mt-2 text-xs hidden sm:block" style={{ color: "#ffffff" }}>
         Enter to send · Shift+Enter for new line
       </p>
     </div>

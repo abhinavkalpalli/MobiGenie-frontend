@@ -42,8 +42,8 @@ export default function Sidebar({
 
   return (
     <div
-      className="w-60 h-full flex flex-col flex-shrink-0"
-      style={{ background: "rgba(10,10,25,0.35)", borderRight: "1px solid rgba(99,102,241,0.3)", backdropFilter: "blur(20px)" }}
+      className="w-72 sm:w-64 h-full flex flex-col flex-shrink-0"
+      style={{ background: "rgba(10,10,25,0.97)", borderRight: "1px solid rgba(99,102,241,0.3)", backdropFilter: "blur(20px)" }}
     >
       {/* Logo */}
       <div className="px-4 py-4 flex items-center gap-2.5" style={{ borderBottom: "1px solid rgba(99,102,241,0.3)" }}>

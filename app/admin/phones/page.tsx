@@ -168,7 +168,7 @@ function Field({
   span2?: boolean;
 }) {
   return (
-    <div className={span2 ? "col-span-2" : ""}>
+    <div className={span2 ? "col-span-1 sm:col-span-2" : ""}>
       <label className="block text-xs text-gray-400 mb-1">{label}</label>
       <input
         type={type}
@@ -211,7 +211,7 @@ function Select({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="col-span-2 mt-3 mb-1 border-b border-gray-700 pb-1">
+    <div className="col-span-1 sm:col-span-2 mt-3 mb-1 border-b border-gray-700 pb-1">
       <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">{children}</span>
     </div>
   );
@@ -382,7 +382,7 @@ export default function AdminPhonesPage() {
               {modalMode === "add" ? "Add Phone" : "Edit Phone"}
             </h2>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
               {/* Basic */}
               <SectionLabel>Basic Info</SectionLabel>

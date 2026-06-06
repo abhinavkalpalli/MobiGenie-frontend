@@ -50,7 +50,7 @@ export default function ChatWindow({ messages, isStreaming, loadingMessages, mes
             <p className="text-sm max-w-sm leading-relaxed" style={{ color: "#e2e2f0" }}>
               Your AI phone advisor. Tell me your budget and requirements and I&apos;ll find the perfect phone for you.
             </p>
-            <div className="grid grid-cols-2 gap-2 mt-7 max-w-xs w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-7 max-w-xs w-full">
               {[
                 { icon: "💰", text: "Best phones under ₹20,000" },
                 { icon: "📷", text: "Top camera phones" },
