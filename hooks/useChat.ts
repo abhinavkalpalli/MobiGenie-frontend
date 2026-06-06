@@ -171,7 +171,7 @@ export function useChat() {
                       ...s,
                       lastMessage: {
                         content: query,
-                        timestamp: new Date().toISOString(),
+                        at: new Date().toISOString(),
                       },
                       updatedAt: new Date().toISOString(),
                     }
