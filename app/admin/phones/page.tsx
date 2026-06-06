@@ -269,12 +269,16 @@ export default function AdminPhonesPage() {
     try {
       const payload = formToPhone(form);
       if (modalMode === "add") {
-        await adminApi.createPhone(payload as Record<string, unknown>);
+        const res = await adminApi.createPhone(payload as Record<string, unknown>);
+        const created = (res as any).data as Phone;
+        setPhones((prev) => [created, ...prev]);
+        setTotal((t) => t + 1);
       } else if (editingPhone) {
-        await adminApi.updatePhone(editingPhone._id, payload as Record<string, unknown>);
+        const res = await adminApi.updatePhone(editingPhone._id, payload as Record<string, unknown>);
+        const updated = (res as any).data as Phone;
+        setPhones((prev) => prev.map((p) => p._id === editingPhone._id ? updated : p));
       }
       closeModal();
-      load();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Save failed");
     } finally {
@@ -285,8 +289,9 @@ export default function AdminPhonesPage() {
   async function handleDelete(id: string) {
     try {
       await adminApi.deletePhone(id);
+      setPhones((prev) => prev.filter((p) => p._id !== id));
+      setTotal((t) => t - 1);
       setDeleteConfirm(null);
-      load();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Delete failed");
     }
