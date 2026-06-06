@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "MobiGenie — AI Phone Advisor",
   description: "Find your perfect phone with AI assistance",
+  icons: {
+    icon: "/MobiGeinie_Chat_Genie_Face-removebg-preview.png",
+  },
 };
 
 export default function RootLayout({

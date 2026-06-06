@@ -32,7 +32,7 @@ export default function InputBox({ onSend, isStreaming, disabled }: Props) {
   ];
 
   return (
-    <div className="px-4 pb-4 pt-2 flex-shrink-0" style={{ borderTop: "1px solid #2e2e4a" }}>
+    <div className="px-4 pb-4 pt-2 flex-shrink-0" style={{ borderTop: "1px solid rgba(99,102,241,0.3)", background: "rgba(10,10,25,0.3)", backdropFilter: "blur(20px)" }}>
       {/* Suggestion chips */}
       {!disabled && (
         <div className="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
@@ -41,14 +41,14 @@ export default function InputBox({ onSend, isStreaming, disabled }: Props) {
               key={s}
               onClick={() => setInput(s)}
               className="flex-shrink-0 text-xs px-3 py-1.5 rounded-full transition-colors"
-              style={{ background: "#1e1e32", color: "#8b8ba7", border: "1px solid #2e2e4a" }}
+              style={{ background: "rgba(255,255,255,0.08)", color: "#ffffff", border: "1px solid rgba(99,102,241,0.4)", backdropFilter: "blur(10px)" }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#252540";
-                e.currentTarget.style.color = "#c4c4dc";
+                e.currentTarget.style.background = "rgba(109,40,217,0.3)";
+                e.currentTarget.style.boxShadow = "0 0 10px rgba(109,40,217,0.4)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#1e1e32";
-                e.currentTarget.style.color = "#8b8ba7";
+                e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                e.currentTarget.style.boxShadow = "none";
               }}
             >
               {s}
@@ -60,9 +60,9 @@ export default function InputBox({ onSend, isStreaming, disabled }: Props) {
       {/* Input row */}
       <div
         className="flex items-end gap-3 rounded-xl px-4 py-3 transition-colors"
-        style={{ background: "#1e1e32", border: "1px solid #2e2e4a" }}
-        onFocus={(e) => (e.currentTarget.style.borderColor = "#6d28d9")}
-        onBlur={(e) => (e.currentTarget.style.borderColor = "#2e2e4a")}
+        style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(99,102,241,0.4)", backdropFilter: "blur(10px)" }}
+        onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(109,40,217,0.9)")}
+        onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)")}
       >
         <textarea
           value={input}
@@ -72,7 +72,7 @@ export default function InputBox({ onSend, isStreaming, disabled }: Props) {
           rows={1}
           disabled={isStreaming}
           className="flex-1 bg-transparent resize-none outline-none text-sm max-h-32 disabled:opacity-40"
-          style={{ color: "#e2e2f0" }}
+          style={{ color: "#ffffff" }}
           onInput={(e) => {
             const t = e.target as HTMLTextAreaElement;
             t.style.height = "auto";
@@ -85,7 +85,8 @@ export default function InputBox({ onSend, isStreaming, disabled }: Props) {
           disabled={!input.trim() || isStreaming}
           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-opacity"
           style={{
-            background: input.trim() && !isStreaming ? "#6d28d9" : "#2e2e4a",
+            background: input.trim() && !isStreaming ? "#6d28d9" : "rgba(255,255,255,0.1)",
+            boxShadow: input.trim() && !isStreaming ? "0 0 12px rgba(109,40,217,0.6)" : "none",
             color: "#fff",
           }}
         >
@@ -100,7 +101,7 @@ export default function InputBox({ onSend, isStreaming, disabled }: Props) {
         </button>
       </div>
 
-      <p className="text-center mt-2 text-xs" style={{ color: "#3b3b5a" }}>
+      <p className="text-center mt-2 text-xs" style={{ color: "#ffffff" }}>
         Enter to send · Shift+Enter for new line
       </p>
     </div>

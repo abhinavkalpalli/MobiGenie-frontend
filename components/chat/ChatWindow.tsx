@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { ChatMessage } from "@/types";
 import MessageBubble from "./MessageBubble";
 import InputBox from "./InputBox";
+import Loader from "@/components/Loader";
 
 interface Props {
   messages: ChatMessage[];
@@ -23,18 +24,15 @@ export default function ChatWindow({ messages, isStreaming, loadingMessages, mes
 
   if (loadingMessages) {
     return (
-      <div className="flex-1 flex items-center justify-center" style={{ background: "#1a1a2e" }}>
-        <div className="text-center">
-          <div className="w-7 h-7 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-sm" style={{ color: "#6b6b8a" }}>Loading messages…</p>
-        </div>
+      <div className="flex-1 flex items-center justify-center" style={{ background: "transparent" }}>
+        <Loader label="Loading messages…" />
       </div>
     );
   }
 
   if (messagesError) {
     return (
-      <div className="flex-1 flex items-center justify-center" style={{ background: "#1a1a2e" }}>
+      <div className="flex-1 flex items-center justify-center" style={{ background: "transparent" }}>
         <div className="text-center px-6">
           <div
             className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl"
@@ -61,21 +59,18 @@ export default function ChatWindow({ messages, isStreaming, loadingMessages, mes
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-0" style={{ background: "#1a1a2e" }}>
+    <div className="flex-1 flex flex-col min-h-0" style={{ background: "transparent" }}>
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto min-h-0 py-6">
+      <div className="flex-1 overflow-y-auto min-h-0 py-6 custom-scrollbar">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-6">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
-              style={{ background: "linear-gradient(135deg, #6d28d9, #4f46e5)" }}
-            >
-              <span className="text-2xl">📱</span>
+            <div className="w-20 h-20 flex items-center justify-center mb-5">
+              <img src="/MobiGeinie_Chat_Genie_Face-removebg-preview.png" alt="MobiGenie" className="w-full h-full object-contain scale-150" style={{ filter: "drop-shadow(0 0 8px rgba(56,189,248,0.9)) drop-shadow(0 0 20px rgba(99,102,241,0.7)) drop-shadow(0 0 40px rgba(56,189,248,0.4)) brightness(1.15)" }} />
             </div>
-            <h2 className="text-xl font-semibold mb-2" style={{ color: "#e2e2f0" }}>
+            <h2 className="text-xl font-semibold mb-2" style={{ color: "#ffffff", textShadow: "0 0 20px rgba(56,189,248,0.8), 0 0 40px rgba(99,102,241,0.5)" }}>
               Welcome to MobiGenie
             </h2>
-            <p className="text-sm max-w-sm leading-relaxed" style={{ color: "#6b6b8a" }}>
+            <p className="text-sm max-w-sm leading-relaxed" style={{ color: "#e2e2f0" }}>
               Your AI phone advisor. Tell me your budget and requirements and I&apos;ll find the perfect phone for you.
             </p>
             <div className="grid grid-cols-2 gap-2 mt-7 max-w-xs w-full">
@@ -89,14 +84,16 @@ export default function ChatWindow({ messages, isStreaming, loadingMessages, mes
                   key={item.text}
                   onClick={() => onSend(item.text)}
                   className="flex items-center gap-2 p-3 rounded-xl text-left transition-colors text-sm"
-                  style={{ background: "#1e1e32", border: "1px solid #2e2e4a", color: "#a0a0c0" }}
+                  style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(99,102,241,0.4)", color: "#ffffff", backdropFilter: "blur(10px)" }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#252540";
-                    e.currentTarget.style.borderColor = "#6d28d9";
+                    e.currentTarget.style.background = "rgba(109,40,217,0.3)";
+                    e.currentTarget.style.borderColor = "rgba(109,40,217,0.8)";
+                    e.currentTarget.style.boxShadow = "0 0 12px rgba(109,40,217,0.4)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#1e1e32";
-                    e.currentTarget.style.borderColor = "#2e2e4a";
+                    e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                    e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)";
+                    e.currentTarget.style.boxShadow = "none";
                   }}
                 >
                   <span>{item.icon}</span>

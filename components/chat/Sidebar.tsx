@@ -43,16 +43,14 @@ export default function Sidebar({
   return (
     <div
       className="w-60 h-full flex flex-col flex-shrink-0"
-      style={{ background: "#13131f", borderRight: "1px solid #2e2e4a" }}
+      style={{ background: "rgba(10,10,25,0.35)", borderRight: "1px solid rgba(99,102,241,0.3)", backdropFilter: "blur(20px)" }}
     >
       {/* Logo */}
-      <div className="px-4 py-4 flex items-center gap-2.5" style={{ borderBottom: "1px solid #2e2e4a" }}>
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gradient-to-br from-violet-600 to-indigo-600">
-          <span className="text-sm">📱</span>
-        </div>
+      <div className="px-4 py-4 flex items-center gap-2.5" style={{ borderBottom: "1px solid rgba(99,102,241,0.3)" }}>
+        <img src="/MobiGeinie_Chat_Genie_Face-removebg-preview.png" alt="MobiGenie" className="w-10 h-10 object-contain scale-150" style={{ filter: "drop-shadow(0 0 6px rgba(56,189,248,0.9)) drop-shadow(0 0 12px rgba(99,102,241,0.7)) brightness(1.15)" }} />
         <div>
-          <p className="text-sm font-semibold" style={{ color: "#e2e2f0" }}>MobiGenie</p>
-          <p className="text-xs" style={{ color: "#6b6b8a" }}>AI Phone Advisor</p>
+          <p className="text-sm font-semibold" style={{ color: "#ffffff", textShadow: "0 0 10px rgba(56,189,248,0.5)" }}>MobiGenie</p>
+          <p className="text-xs" style={{ color: "#a0c4ff" }}>AI Phone Advisor</p>
         </div>
       </div>
 
@@ -61,7 +59,7 @@ export default function Sidebar({
         <button
           onClick={onNewChat}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-          style={{ background: "#6d28d9", color: "#fff" }}
+          style={{ background: "#6d28d9", color: "#fff", boxShadow: "0 0 12px rgba(109,40,217,0.6)" }}
           onMouseEnter={(e) => (e.currentTarget.style.background = "#7c3aed")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "#6d28d9")}
         >
@@ -73,10 +71,10 @@ export default function Sidebar({
       </div>
 
       {/* Sessions */}
-      <div className="flex-1 overflow-y-auto px-2 pb-2">
+      <div className="flex-1 overflow-y-auto px-2 pb-2 custom-scrollbar">
         <p
           className="text-xs font-medium uppercase tracking-wider px-2 mb-1.5"
-          style={{ color: "#4b4b6b" }}
+          style={{ color: "#ffffff" }}
         >
           Recent
         </p>
@@ -99,7 +97,7 @@ export default function Sidebar({
             </button>
           </div>
         ) : sessions.length === 0 ? (
-          <p className="text-xs text-center py-6" style={{ color: "#4b4b6b" }}>No chats yet</p>
+          <p className="text-xs text-center py-6" style={{ color: "#a0c4ff" }}>No chats yet</p>
         ) : (
           <div className="space-y-0.5">
             {sessions.map((session) => {
@@ -110,18 +108,19 @@ export default function Sidebar({
                   onClick={() => onSelectSession(session._id)}
                   className="w-full text-left px-3 py-2.5 rounded-lg transition-colors"
                   style={{
-                    background: isActive ? "#2a2a42" : "transparent",
-                    color: isActive ? "#e2e2f0" : "#8b8ba7",
+                    background: isActive ? "rgba(109,40,217,0.3)" : "transparent",
+                    color: "#ffffff",
+                    border: isActive ? "1px solid rgba(109,40,217,0.5)" : "1px solid transparent",
                   }}
                   onMouseEnter={(e) => {
-                    if (!isActive) e.currentTarget.style.background = "#1e1e32";
+                    if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.08)";
                   }}
                   onMouseLeave={(e) => {
                     if (!isActive) e.currentTarget.style.background = "transparent";
                   }}
                 >
                   <p className="text-xs font-medium truncate">{session.title}</p>
-                  <p className="text-xs truncate mt-0.5" style={{ color: "#4b4b6b" }}>
+                  <p className="text-xs truncate mt-0.5" style={{ color: "#a0c4ff" }}>
                     {formatTime(session.updatedAt)}
                   </p>
                 </button>
@@ -132,7 +131,7 @@ export default function Sidebar({
       </div>
 
       {/* User */}
-      <div className="px-3 py-3 flex items-center justify-between" style={{ borderTop: "1px solid #2e2e4a" }}>
+      <div className="px-3 py-3 flex items-center justify-between" style={{ borderTop: "1px solid rgba(99,102,241,0.3)" }}>
         <div className="flex items-center gap-2 min-w-0">
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -141,8 +140,8 @@ export default function Sidebar({
             {user?.name?.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-medium truncate" style={{ color: "#c4c4dc" }}>{user?.name}</p>
-            <p className="text-xs truncate" style={{ color: "#4b4b6b" }}>{user?.email}</p>
+            <p className="text-xs font-medium truncate" style={{ color: "#ffffff" }}>{user?.name}</p>
+            <p className="text-xs truncate" style={{ color: "#ffffff" }}>{user?.email}</p>
           </div>
         </div>
         <button

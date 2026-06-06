@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +10,7 @@ import Sidebar from "@/components/chat/Sidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
 import Toast from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
+import Loader from "@/components/Loader";
 
 export default function HomePage() {
   const router = useRouter();
@@ -37,13 +39,10 @@ export default function HomePage() {
     }
   }, [authLoading, router]);
 
-  if (authLoading) {
+  if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#1a1a2e" }}>
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm" style={{ color: "#8b8ba7" }}>Loading MobiGenie...</p>
-        </div>
+        <Loader label="Loading MobiGenie..." />
       </div>
     );
   }
@@ -69,7 +68,15 @@ export default function HomePage() {
     : "New Chat";
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: "#1a1a2e" }}>
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{
+        backgroundImage: `linear-gradient(rgba(10,10,25,0.25), rgba(10,10,25,0.25)), url('/Firefly_Gemini Flash.png')`,
+        backgroundSize: "110%",
+        backgroundPosition: "60% center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
       <Toast toasts={toasts} onDismiss={dismiss} />
       <Sidebar
         user={user}
@@ -87,17 +94,25 @@ export default function HomePage() {
         {/* Header */}
         <div
           className="px-6 py-3 flex items-center justify-between border-b flex-shrink-0"
-          style={{ background: "#1e1e32", borderColor: "#2e2e4a" }}
+          style={{ background: "rgba(10,10,25,0.35)", borderColor: "rgba(99,102,241,0.3)", backdropFilter: "blur(20px)" }}
         >
           <div>
             <h2 className="font-medium text-sm" style={{ color: "#e2e2f0" }}>
               {activeTitle}
             </h2>
             <p className="text-xs mt-0.5" style={{ color: "#6b6b8a" }}>
-              {isStreaming ? "MobiGenie is thinking…" : "AI Phone Advisor"}
+              <span style={{ color: "#a0c4ff" }}>{isStreaming ? "MobiGenie is thinking…" : "AI Phone Advisor"}</span>
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {user?.role === "admin" && (
+              <Link
+                href="/admin"
+                className="text-xs px-3 py-1 rounded-md bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/40 transition-colors font-medium"
+              >
+                Admin Panel
+              </Link>
+            )}
             <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
             <span className="text-xs" style={{ color: "#6b6b8a" }}>Online</span>
           </div>

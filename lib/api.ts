@@ -44,19 +44,20 @@ function isNetworkError(err: unknown): boolean {
 
 const apiFetch = async (
   endpoint: string,
-  options: RequestInit = {},
+  options: RequestInit & { skipGlobal401?: boolean } = {},
 ): Promise<ApiResponse> => {
+  const { skipGlobal401, ...fetchOptions } = options;
   const token = getToken();
 
   let response: Response;
   try {
     response = await withTimeout(
       fetch(`${BASE_URL}${endpoint}`, {
-        ...options,
+        ...fetchOptions,
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...options.headers,
+          ...fetchOptions.headers,
         },
       }),
       TIMEOUT_MS,
@@ -82,7 +83,7 @@ const apiFetch = async (
       errorMessage = response.statusText || errorMessage;
     }
 
-    if (response.status === 401) {
+    if (response.status === 401 && !skipGlobal401) {
       const onLoginPage =
         typeof window !== "undefined" && window.location.pathname === "/login";
       if (!onLoginPage) {
@@ -172,7 +173,47 @@ export const authApi = {
   },
 
   getProfile: async () => {
-    return apiFetch("/auth/me");
+    return apiFetch("/auth/me", { skipGlobal401: true });
+  },
+
+  sendOtp: async (email: string) => {
+    return apiFetch('/auth/send-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+      skipGlobal401: true,
+    });
+  },
+
+  verifyOtp: async (email: string, otp: string) => {
+    return apiFetch('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+      skipGlobal401: true,
+    });
+  },
+
+  forgotPassword: async (email: string) => {
+    return apiFetch('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+      skipGlobal401: true,
+    });
+  },
+
+  verifyResetOtp: async (email: string, otp: string) => {
+    return apiFetch('/auth/verify-reset-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+      skipGlobal401: true,
+    });
+  },
+
+  resetPassword: async (email: string, password: string) => {
+    return apiFetch('/auth/reset-password', {
+      method: 'PATCH',
+      body: JSON.stringify({ email, password }),
+      skipGlobal401: true,
+    });
   },
 
   googleLogin: async (accessToken: string) => {
@@ -216,6 +257,51 @@ export const chatApi = {
       method: "POST",
       body: JSON.stringify({ query, sessionId }),
     });
+  },
+};
+
+// ════════════════════════════════════════════
+// Admin APIs
+// ════════════════════════════════════════════
+
+export const adminApi = {
+  // ── Users ──
+  getUsers: async (page = 1, limit = 20) => {
+    return apiFetch(`/admin/users?page=${page}&limit=${limit}`);
+  },
+
+  updateUserRole: async (userId: string, role: string) => {
+    return apiFetch(`/admin/users/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role }),
+    });
+  },
+
+  deleteUser: async (userId: string) => {
+    return apiFetch(`/admin/users/${userId}`, { method: 'DELETE' });
+  },
+
+  // ── Phones ──
+  getAllPhones: async (page = 1, limit = 20) => {
+    return apiFetch(`/phones/admin/all?page=${page}&limit=${limit}`);
+  },
+
+  createPhone: async (data: Record<string, unknown>) => {
+    return apiFetch('/phones/admin', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  updatePhone: async (id: string, data: Record<string, unknown>) => {
+    return apiFetch(`/phones/admin/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  deletePhone: async (id: string) => {
+    return apiFetch(`/phones/admin/${id}`, { method: 'DELETE' });
   },
 };
 

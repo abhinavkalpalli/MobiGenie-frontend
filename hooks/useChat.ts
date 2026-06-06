@@ -53,11 +53,8 @@ export function useChat() {
       const res = await sessionApi.getMessages(sessionId);
       const msgs: Message[] = (res.data as Message[]) || [];
 
-      const chatMessages: ChatMessage[] = msgs.map((m) => ({
-        id: m._id,
-        role: m.role,
-        content: m.content,
-        phones:
+      const chatMessages: ChatMessage[] = msgs.map((m) => {
+        const phones =
           m.suggestedPhones?.length > 0
             ? m.suggestedPhones.map((sp) => {
                 if (sp.phoneId && typeof sp.phoneId === "object") {
@@ -70,9 +67,28 @@ export function useChat() {
                   image: sp.image,
                 } as Phone;
               })
-            : undefined,
-        parsed: m.parsedQuery ?? undefined,
-      }));
+            : undefined;
+
+        // Derive recommendedIds from phones with matchScore >= 1.0
+        const recommendedIds = m.suggestedPhones?.length > 0
+          ? m.suggestedPhones
+              .filter((sp) => (sp.matchScore ?? 0) >= 1.0)
+              .map((sp) =>
+                typeof sp.phoneId === "object"
+                  ? (sp.phoneId as any)._id?.toString() ?? (sp.phoneId as any).toString()
+                  : sp.phoneId as string
+              )
+          : undefined;
+
+        return {
+          id: m._id,
+          role: m.role,
+          content: m.content,
+          phones,
+          parsed: m.parsedQuery ?? undefined,
+          recommendedIds,
+        };
+      });
 
       setMessages(chatMessages);
     } catch (err) {
