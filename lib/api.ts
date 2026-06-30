@@ -1,15 +1,11 @@
 import type { Phone, ParsedQuery } from "@/types";
-import { getToken, getRefreshToken, setTokens, clearTokens } from "./auth";
+import { clearTokens } from "./auth";
 
 interface ApiResponse<T = unknown> {
   data: T;
   message?: string;
 }
 
-interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-}
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
@@ -47,16 +43,15 @@ const apiFetch = async (
   options: RequestInit & { skipGlobal401?: boolean } = {},
 ): Promise<ApiResponse> => {
   const { skipGlobal401, ...fetchOptions } = options;
-  const token = getToken();
 
   let response: Response;
   try {
     response = await withTimeout(
       fetch(`${BASE_URL}${endpoint}`, {
         ...fetchOptions,
+        credentials: "include", // sends httpOnly cookies automatically
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...fetchOptions.headers,
         },
       }),
@@ -116,36 +111,27 @@ const apiFetch = async (
 
 export const authApi = {
   login: async (email: string, password: string) => {
-    const res = await apiFetch("/auth/login", {
+    return apiFetch("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
-    }) as ApiResponse<AuthTokens>;
-    setTokens(res.data.accessToken, res.data.refreshToken);
-    return res;
+    });
   },
 
   register: async (name: string, email: string, password: string) => {
-    const res = await apiFetch("/auth/register", {
+    return apiFetch("/auth/register", {
       method: "POST",
       body: JSON.stringify({ name, email, password }),
-    }) as ApiResponse<AuthTokens>;
-    setTokens(res.data.accessToken, res.data.refreshToken);
-    return res;
+    });
   },
 
   refreshToken: async () => {
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) throw new Error("No refresh token");
-
     let res: Response;
     try {
       res = await withTimeout(
         fetch(`${BASE_URL}/auth/refresh`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${refreshToken}`,
-          },
+          credentials: "include", // sends httpOnly refreshToken cookie automatically
+          headers: { "Content-Type": "application/json" },
         }),
         TIMEOUT_MS,
       );
@@ -155,21 +141,14 @@ export const authApi = {
     }
 
     if (!res.ok) {
-      clearTokens();
       throw new Error("Session expired — please sign in again.");
     }
 
-    const data = await res.json();
-    setTokens(data.data.accessToken, data.data.refreshToken);
-    return data;
+    return res.json();
   },
 
   logout: async () => {
-    try {
-      await apiFetch("/auth/logout", { method: "POST" });
-    } finally {
-      clearTokens();
-    }
+    return apiFetch("/auth/logout", { method: "POST" });
   },
 
   getProfile: async () => {
@@ -216,13 +195,11 @@ export const authApi = {
     });
   },
 
-  googleLogin: async (accessToken: string) => {
-    const res = await apiFetch("/auth/google", {
+  googleLogin: async (idToken: string) => {
+    return apiFetch("/auth/google", {
       method: "POST",
-      body: JSON.stringify({ idToken: accessToken }),
-    }) as ApiResponse<AuthTokens>;
-    setTokens(res.data.accessToken, res.data.refreshToken);
-    return res;
+      body: JSON.stringify({ idToken }),
+    });
   },
 };
 
@@ -317,13 +294,6 @@ export const streamQuery = async (
   onDone: (recommendedIds: string[]) => void,
   onError: (error: string) => void,
 ): Promise<void> => {
-  const token = getToken();
-
-  if (!token) {
-    onError("Not authenticated. Please sign in again.");
-    return;
-  }
-
   const params = new URLSearchParams({ query });
   if (sessionId) params.append("sessionId", sessionId);
 
@@ -334,7 +304,7 @@ export const streamQuery = async (
     let response: Response;
     try {
       response = await fetch(`${BASE_URL}/chat/stream?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include", // sends httpOnly accessToken cookie automatically
         signal: controller.signal,
       });
     } catch (err) {
@@ -351,7 +321,6 @@ export const streamQuery = async (
 
     if (!response.ok) {
       if (response.status === 401) {
-        clearTokens();
         window.location.href = "/login";
         return;
       }

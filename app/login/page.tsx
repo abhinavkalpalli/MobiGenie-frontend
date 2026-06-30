@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 import { authApi } from "@/lib/api";
-import { getToken } from "@/lib/auth";
 
 type Screen = "auth" | "verify-otp" | "forgot-email" | "forgot-otp" | "forgot-reset";
 
@@ -101,7 +100,7 @@ function LoginForm() {
   const [otpTimer, setOtpTimer] = useState(0);
 
   useEffect(() => {
-    if (getToken()) router.replace("/");
+    authApi.getProfile().then(() => router.replace("/")).catch(() => {});
   }, [router]);
 
   useEffect(() => {

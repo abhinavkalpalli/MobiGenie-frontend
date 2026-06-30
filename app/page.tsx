@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getToken } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
 import { useChat } from "@/hooks/useChat";
 import Sidebar from "@/components/chat/Sidebar";
@@ -35,10 +34,10 @@ export default function HomePage() {
   } = useChat();
 
   useEffect(() => {
-    if (!authLoading && !getToken()) {
+    if (!authLoading && !user) {
       router.push("/login");
     }
-  }, [authLoading, router]);
+  }, [authLoading, user, router]);
 
   if (authLoading || !user) {
     return (

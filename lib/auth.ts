@@ -1,111 +1,50 @@
-import Cookies from "js-cookie";
-
-// ─── Token Keys ───────────────────────────────
-const ACCESS_TOKEN_KEY = "accessToken";
-const REFRESH_TOKEN_KEY = "refreshToken";
-
-// ════════════════════════════════════════════
-// Token Getters
-// ════════════════════════════════════════════
-
-export const getToken = (): string | undefined => {
-  return Cookies.get(ACCESS_TOKEN_KEY);
-};
-
-export const getRefreshToken = (): string | undefined => {
-  return Cookies.get(REFRESH_TOKEN_KEY);
-};
-
-// ════════════════════════════════════════════
-// Token Setters
-// ════════════════════════════════════════════
-
-export const setTokens = (accessToken: string, refreshToken: string): void => {
-  // Access token expires in 7 days
-  Cookies.set(ACCESS_TOKEN_KEY, accessToken, {
-    expires: 7,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
-
-  // Refresh token expires in 30 days
-  Cookies.set(REFRESH_TOKEN_KEY, refreshToken, {
-    expires: 30,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
-};
-
-// ════════════════════════════════════════════
-// Token Removal
-// ════════════════════════════════════════════
-
-export const clearTokens = (): void => {
-  Cookies.remove(ACCESS_TOKEN_KEY);
-  Cookies.remove(REFRESH_TOKEN_KEY);
-};
+// Tokens are now httpOnly cookies set by the backend.
+// JavaScript cannot read them — the browser sends them automatically.
 
 // ════════════════════════════════════════════
 // Auth Checks
 // ════════════════════════════════════════════
 
-// Check if user is logged in
-export const isAuthenticated = (): boolean => {
-  return !!getToken();
-};
-
-// ════════════════════════════════════════════
-// Token Decoder
-// ════════════════════════════════════════════
-
-// Decode JWT payload without verifying
-// (verification happens on backend)
-interface JwtPayload {
-  sub: string;
-  email: string;
-  role: string;
-  exp: number;
-  [key: string]: unknown;
-}
-
-export const decodeToken = (token: string): JwtPayload | null => {
+// We can no longer read the token from JS.
+// Use the /auth/me endpoint to check if the user is authenticated.
+export const isAuthenticated = async (): Promise<boolean> => {
   try {
-    const base64Payload = token.split(".")[1];
-    const payload = atob(base64Payload);
-    return JSON.parse(payload);
+    const BASE_URL =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
+    const res = await fetch(`${BASE_URL}/auth/me`, {
+      credentials: "include", // sends httpOnly cookies automatically
+    });
+    return res.ok;
   } catch {
-    return null;
+    return false;
   }
 };
 
-// Check if token is expired
-export const isTokenExpired = (token: string): boolean => {
-  try {
-    const decoded = decodeToken(token);
-    if (!decoded?.exp) return true;
+// ════════════════════════════════════════════
+// No-ops kept for backwards compatibility
+// (callers can be cleaned up later)
+// ════════════════════════════════════════════
 
-    // exp is in seconds, Date.now() is in ms
-    return decoded.exp * 1000 < Date.now();
-  } catch {
-    return true;
-  }
+export const setTokens = (_accessToken: string, _refreshToken: string): void => {
+  // Tokens are now set by the backend via Set-Cookie — nothing to do here.
 };
 
-// Get user info from token (without API call)
-export const getUserFromToken = (): {
-  userId: string;
-  email: string;
-  role: string;
-} | null => {
-  const token = getToken();
-  if (!token) return null;
+export const clearTokens = (): void => {
+  // Logout endpoint clears cookies server-side — nothing to do here.
+};
 
-  const decoded = decodeToken(token);
-  if (!decoded) return null;
+export const getToken = (): string | undefined => {
+  // Cannot read httpOnly cookies from JavaScript by design.
+  return undefined;
+};
 
-  return {
-    userId: decoded.sub,
-    email: decoded.email,
-    role: decoded.role,
-  };
+export const getRefreshToken = (): string | undefined => {
+  // Cannot read httpOnly cookies from JavaScript by design.
+  return undefined;
+};
+
+export const isTokenExpired = (_token: string): boolean => {
+  // Cannot decode httpOnly cookies from JavaScript by design.
+  // Token expiry is handled server-side.
+  return false;
 };

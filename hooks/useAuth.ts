@@ -3,12 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/lib/api";
-import {
-  getToken,
-  clearTokens,
-  isAuthenticated,
-  isTokenExpired,
-} from "@/lib/auth";             // ← import from auth.ts
 import type { User } from "@/types";
 
 export function useAuth() {
@@ -21,7 +15,6 @@ export function useAuth() {
       const res = await authApi.getProfile();
       setUser(res.data as User);
     } catch {
-      clearTokens();
       router.push("/login");
     } finally {
       setLoading(false);
@@ -30,30 +23,19 @@ export function useAuth() {
 
   useEffect(() => {
     const init = async () => {
-      // ─── Check token exists ─────────────────
-      if (!isAuthenticated()) {
-        setLoading(false);
-        router.push("/login");
-        return;
-      }
-
-      // ─── Check token not expired ─────────────
-      const token = getToken()!;
-      if (isTokenExpired(token)) {
-        // Try refresh before giving up
+      try {
+        // Try loading profile — if accessToken cookie is valid, this succeeds
+        await loadProfile();
+      } catch {
+        // Access token expired — try refresh (refreshToken cookie sent automatically)
         try {
           await authApi.refreshToken();
           await loadProfile();
         } catch {
-          clearTokens();
           setLoading(false);
           router.push("/login");
         }
-        return;
       }
-
-      // ─── Token valid — load profile ──────────
-      await loadProfile();
     };
 
     init();
@@ -62,8 +44,6 @@ export function useAuth() {
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
-    } catch {
-      clearTokens();
     } finally {
       setUser(null);
       router.push("/login");
