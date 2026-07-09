@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is the MobiGenie frontend — a [Next.js](https://nextjs.org) 16 (App Router, Turbopack) app that provides the chat UI for MobiGenie, an AI phone recommendation assistant.
 
-## Getting Started
+> **Note:** This project pins a Next.js version that may differ from what you know — check `node_modules/next/dist/docs/` for anything unfamiliar before assuming standard behavior (see `AGENTS.md`).
 
-First, run the development server:
+## Stack
+
+- Next.js 16 / React 19 (App Router, client components, no global state library — plain hooks)
+- Tailwind CSS 4
+- `@react-oauth/google` for Google Sign-In
+
+## Prerequisites
+
+- Node.js 20+
+- The [backend](../backend/README.md) running and reachable (defaults to `http://localhost:3000/api/v1`)
+
+## Setup
+
+```bash
+npm install
+```
+
+Create `.env.local`:
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=<your-google-oauth-client-id>
+```
+
+## Running
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Runs on **port 3003** (see `package.json`'s `dev` script) — open [http://localhost:3003](http://localhost:3003).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build   # production build
+npm run start   # serve production build
+npm run lint    # eslint
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## App structure
 
-## Learn More
+| Path | Purpose |
+|---|---|
+| `app/login` | Sign in / sign up / OTP verification / forgot-password / Google login / guest login |
+| `app/page.tsx` | Main chat UI (sessions sidebar + streaming chat window) |
+| `app/admin` | Admin-only dashboard — user management, phone catalog management (role-gated via `useAdminAuth`) |
+| `hooks/useAuth.ts` | Loads the current user from `/auth/me`, retries via `/auth/refresh`, redirects to `/login` on failure |
+| `hooks/useChat.ts` | Session list, message loading, and SSE-streamed chat sending |
+| `lib/api.ts` | Typed `fetch` wrapper (`apiFetch`) + `authApi`/`sessionApi`/`chatApi`/`adminApi`, plus the raw SSE `streamQuery` client |
+| `lib/auth.ts` | No-op token helpers (tokens live in httpOnly cookies set by the backend — not accessible from JS) |
+| `types/index.ts` | Shared TS types (`User`, `Phone`, `Session`, `Message`, ...) |
 
-To learn more about Next.js, take a look at the following resources:
+## Auth model
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The backend issues JWTs as **httpOnly cookies** (`accessToken` / `refreshToken`); the frontend never reads or stores tokens itself — every API call is made with `credentials: "include"`. `useAuth` re-derives the session on mount by calling `/auth/me`, falling back to `/auth/refresh` once before redirecting to `/login`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Three ways to authenticate from `/login`:
+- Email/password (with OTP email verification on sign-up)
+- Google Sign-In
+- **Guest login** — starts an ephemeral session with no account required, capped at 2 chats / 5 messages. When a guest hits either limit, a modal (`components/GuestLimitModal.tsx`) prompts them to log in; existing guest chat history stays readable, but creating new chats or sending further messages is blocked until they sign in.
 
-## Deploy on Vercel
+## Learn more
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Learn Next.js](https://nextjs.org/learn)

@@ -1,9 +1,10 @@
 export interface User {
   _id: string;
   name: string;
-  email: string;
+  email: string | null;
   role: string;
   createdAt: string;
+  isGuest?: boolean;
 }
 
 export interface Phone {

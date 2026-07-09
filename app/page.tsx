@@ -10,6 +10,7 @@ import ChatWindow from "@/components/chat/ChatWindow";
 import Toast from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
 import Loader from "@/components/Loader";
+import GuestLimitModal from "@/components/GuestLimitModal";
 
 export default function HomePage() {
   const router = useRouter();
@@ -26,6 +27,8 @@ export default function HomePage() {
     loadingMessages,
     sessionsError,
     messagesError,
+    guestLimitReason,
+    clearGuestLimit,
     loadSessions,
     createSession,
     loadSession,
@@ -54,7 +57,8 @@ export default function HomePage() {
         const session = await createSession(
           message.length > 30 ? message.substring(0, 30) + "..." : message,
         );
-        sessionId = session?._id ?? null;
+        if (!session) return;
+        sessionId = session._id;
       } catch (err) {
         addToast(err instanceof Error ? err.message : "Failed to create chat.", "error");
         return;
@@ -78,6 +82,10 @@ export default function HomePage() {
       }}
     >
       <Toast toasts={toasts} onDismiss={dismiss} />
+
+      {guestLimitReason && (
+        <GuestLimitModal reason={guestLimitReason} onClose={clearGuestLimit} />
+      )}
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (

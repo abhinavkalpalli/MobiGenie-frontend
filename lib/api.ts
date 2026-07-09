@@ -6,6 +6,15 @@ interface ApiResponse<T = unknown> {
   message?: string;
 }
 
+export class ApiError extends Error {
+  code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+  }
+}
+
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
@@ -66,9 +75,11 @@ const apiFetch = async (
 
   if (!response.ok) {
     let errorMessage = `Request failed (${response.status})`;
+    let errorCode: string | undefined;
 
     try {
       const error = await response.json();
+      errorCode = error.error;
       if (Array.isArray(error.message)) {
         errorMessage = error.message.join(", ");
       } else {
@@ -85,6 +96,10 @@ const apiFetch = async (
         clearTokens();
         window.location.href = "/login";
       }
+    }
+
+    if (response.status === 403 && errorCode) {
+      throw new ApiError(errorMessage, errorCode);
     }
 
     if (response.status === 429) {
@@ -195,6 +210,10 @@ export const authApi = {
     });
   },
 
+  guestLogin: async () => {
+    return apiFetch("/auth/guest", { method: "POST" });
+  },
+
   googleLogin: async (idToken: string) => {
     return apiFetch("/auth/google", {
       method: "POST",
@@ -293,6 +312,7 @@ export const streamQuery = async (
   onChunk: (chunk: string) => void,
   onDone: (recommendedIds: string[]) => void,
   onError: (error: string) => void,
+  onGuestLimit?: () => void,
 ): Promise<void> => {
   const params = new URLSearchParams({ query });
   if (sessionId) params.append("sessionId", sessionId);
@@ -323,6 +343,17 @@ export const streamQuery = async (
       if (response.status === 401) {
         window.location.href = "/login";
         return;
+      }
+      if (response.status === 403) {
+        try {
+          const body = await response.json();
+          if (body.error === "GuestLimitExceeded") {
+            onGuestLimit?.();
+            return;
+          }
+        } catch {
+          // fall through to generic handling
+        }
       }
       if (response.status === 429) {
         onError("Too many requests — please wait a moment and try again.");

@@ -95,12 +95,18 @@ function LoginForm() {
   // ── UI state ──────────────────────────────────
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [otpTimer, setOtpTimer] = useState(0);
 
   useEffect(() => {
-    authApi.getProfile().then(() => router.replace("/")).catch(() => {});
+    authApi.getProfile()
+      .then((res) => {
+        const data = res.data as { isGuest?: boolean };
+        if (!data.isGuest) router.replace("/");
+      })
+      .catch(() => {});
   }, [router]);
 
   useEffect(() => {
@@ -293,6 +299,19 @@ function LoginForm() {
     },
     onError: () => setError("Google sign-in was cancelled or failed. Please try again."),
   });
+
+  const handleGuestLogin = async () => {
+    setGuestLoading(true);
+    setError("");
+    try {
+      await authApi.guestLogin();
+      router.push("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Guest sign-in failed");
+    } finally {
+      setGuestLoading(false);
+    }
+  };
 
   const switchMode = (login: boolean) => {
     setIsLogin(login);
@@ -531,6 +550,16 @@ function LoginForm() {
                   </svg>
                 )}
                 Continue with Google
+              </button>
+
+              {/* Guest */}
+              <button type="button" onClick={handleGuestLogin} disabled={guestLoading || loading || googleLoading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium mb-4 transition-colors disabled:opacity-50"
+                style={{ background: "transparent", color: "#a0c4ff", border: "1px solid rgba(255,255,255,0.1)" }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              >
+                {guestLoading ? <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : "Continue as Guest"}
               </button>
 
               {/* Divider */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { streamQuery, sessionApi } from "@/lib/api";
+import { streamQuery, sessionApi, ApiError } from "@/lib/api";
 import { ChatMessage, Session, Message, Phone, ParsedQuery } from "@/types";
 
 export function useChat() {
@@ -13,6 +13,7 @@ export function useChat() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
   const [messagesError, setMessagesError] = useState<string | null>(null);
+  const [guestLimitReason, setGuestLimitReason] = useState<"sessions" | "messages" | null>(null);
 
   // ─── Load all sessions ────────────────────────
   const loadSessions = useCallback(async () => {
@@ -40,6 +41,10 @@ export function useChat() {
       setMessages([]);
       return newSession;
     } catch (err) {
+      if (err instanceof ApiError && err.code === "GuestLimitExceeded") {
+        setGuestLimitReason("sessions");
+        return null;
+      }
       const message =
         err instanceof Error ? err.message : "Failed to create chat.";
       throw new Error(message);
@@ -164,11 +169,13 @@ export function useChat() {
           setIsStreaming(false);
           const sid = sessionId || activeSessionId;
           if (sid) {
+            const title = query.length > 30 ? query.substring(0, 30) + "..." : query;
             setSessions((prev) =>
               prev.map((s) =>
                 s._id === sid
                   ? {
                       ...s,
+                      title,
                       lastMessage: {
                         content: query,
                         at: new Date().toISOString(),
@@ -191,6 +198,12 @@ export function useChat() {
           );
           setIsStreaming(false);
         },
+
+        () => {
+          setMessages((prev) => prev.filter((m) => m.id !== userMsg.id && m.id !== assistantId));
+          setIsStreaming(false);
+          setGuestLimitReason("messages");
+        },
       );
     },
     [isStreaming, activeSessionId, loadSessions],
@@ -212,6 +225,8 @@ export function useChat() {
     loadingMessages,
     sessionsError,
     messagesError,
+    guestLimitReason,
+    clearGuestLimit: () => setGuestLimitReason(null),
     loadSessions,
     createSession,
     loadSession,
