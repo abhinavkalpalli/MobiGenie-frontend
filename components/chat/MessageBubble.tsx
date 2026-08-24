@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ChatMessage } from "@/types";
 import PhoneCard from "./PhoneCard";
 
@@ -8,15 +10,64 @@ interface Props {
   message: ChatMessage;
 }
 
-function renderInline(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i} style={{ color: "#e2e2f0", fontWeight: 600 }}>{part.slice(2, -2)}</strong>;
-    }
-    return part;
-  });
-}
+const markdownComponents = {
+  h1: (props: React.ComponentPropsWithoutRef<"h1">) => (
+    <h1 className="text-lg font-semibold mt-3 mb-2" style={{ color: "#f0f0ff" }} {...props} />
+  ),
+  h2: (props: React.ComponentPropsWithoutRef<"h2">) => (
+    <h2 className="text-base font-semibold mt-3 mb-1.5" style={{ color: "#f0f0ff" }} {...props} />
+  ),
+  h3: (props: React.ComponentPropsWithoutRef<"h3">) => (
+    <h3 className="text-sm font-semibold mt-2.5 mb-1" style={{ color: "#e2e2f0" }} {...props} />
+  ),
+  p: (props: React.ComponentPropsWithoutRef<"p">) => <p className="mt-1.5 leading-relaxed" {...props} />,
+  strong: (props: React.ComponentPropsWithoutRef<"strong">) => (
+    <strong style={{ color: "#e2e2f0", fontWeight: 600 }} {...props} />
+  ),
+  em: (props: React.ComponentPropsWithoutRef<"em">) => <em style={{ color: "#c4c4dc" }} {...props} />,
+  ul: (props: React.ComponentPropsWithoutRef<"ul">) => (
+    <ul className="mt-1.5 ml-2 space-y-1 list-disc list-inside" {...props} />
+  ),
+  ol: (props: React.ComponentPropsWithoutRef<"ol">) => (
+    <ol className="mt-1.5 ml-2 space-y-1 list-decimal list-inside" {...props} />
+  ),
+  li: (props: React.ComponentPropsWithoutRef<"li">) => <li className="leading-relaxed" {...props} />,
+  hr: () => <hr className="my-3" style={{ borderColor: "#2e2e4a" }} />,
+  a: (props: React.ComponentPropsWithoutRef<"a">) => (
+    <a
+      className="underline"
+      style={{ color: "#a78bfa" }}
+      target="_blank"
+      rel="noopener noreferrer"
+      {...props}
+    />
+  ),
+  code: (props: React.ComponentPropsWithoutRef<"code">) => (
+    <code
+      className="px-1 py-0.5 rounded text-xs"
+      style={{ background: "#12121f", color: "#e2e2f0" }}
+      {...props}
+    />
+  ),
+  table: (props: React.ComponentPropsWithoutRef<"table">) => (
+    <div className="overflow-x-auto mt-2 mb-1 rounded-lg" style={{ border: "1px solid #2e2e4a" }}>
+      <table className="w-full text-xs border-collapse" {...props} />
+    </div>
+  ),
+  thead: (props: React.ComponentPropsWithoutRef<"thead">) => (
+    <thead style={{ background: "#12121f" }} {...props} />
+  ),
+  th: (props: React.ComponentPropsWithoutRef<"th">) => (
+    <th
+      className="text-left font-semibold px-3 py-2"
+      style={{ color: "#a0a0c0", borderBottom: "1px solid #2e2e4a" }}
+      {...props}
+    />
+  ),
+  td: (props: React.ComponentPropsWithoutRef<"td">) => (
+    <td className="px-3 py-2 align-top" style={{ borderBottom: "1px solid #2e2e4a" }} {...props} />
+  ),
+};
 
 export default function MessageBubble({ message }: Props) {
   const isUser = message.role === "user";
@@ -76,28 +127,9 @@ export default function MessageBubble({ message }: Props) {
               {/* Text */}
               {message.content && (
                 <div>
-                  {message.content.split("\n").map((line, i) => {
-                    const numbered = line.match(/^(\d+)\.\s+(.*)/);
-                    if (numbered) {
-                      return (
-                        <div key={i} className="flex gap-2 mt-1.5">
-                          <span className="font-semibold shrink-0" style={{ color: "#a0a0c0" }}>{numbered[1]}.</span>
-                          <span>{renderInline(numbered[2])}</span>
-                        </div>
-                      );
-                    }
-                    const bullet = line.match(/^[*-]\s+(.*)/);
-                    if (bullet) {
-                      return (
-                        <div key={i} className="flex gap-2 mt-1 ml-2">
-                          <span className="shrink-0 mt-0.5" style={{ color: "#6d28d9" }}>•</span>
-                          <span>{renderInline(bullet[1])}</span>
-                        </div>
-                      );
-                    }
-                    if (line.trim() === "") return <div key={i} className="h-2" />;
-                    return <p key={i} className="mt-0.5">{renderInline(line)}</p>;
-                  })}
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                    {message.content}
+                  </ReactMarkdown>
                   {message.isStreaming && (
                     <span
                       className="inline-block w-0.5 h-4 ml-0.5 align-middle animate-pulse"

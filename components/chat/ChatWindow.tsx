@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { ChatMessage } from "@/types";
 import MessageBubble from "./MessageBubble";
 import InputBox from "./InputBox";
@@ -15,17 +15,68 @@ interface Props {
   onRetryMessages: () => void;
 }
 
+const NEAR_BOTTOM_THRESHOLD = 80; // px
+const BUTTON_AUTO_HIDE_MS = 5000;
+
 export default function ChatWindow({ messages, isStreaming, loadingMessages, messagesError, onSend, onRetryMessages }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [isNearBottom, setIsNearBottom] = useState(true);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+
+  const isNearBottomNow = () => {
+    const el = scrollContainerRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight <= NEAR_BOTTOM_THRESHOLD;
+  };
+
+  const armAutoHide = useCallback(() => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => setShowScrollButton(false), BUTTON_AUTO_HIDE_MS);
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    const nearBottom = isNearBottomNow();
+    setIsNearBottom(nearBottom);
+    if (nearBottom) {
+      setShowScrollButton(false);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    } else {
+      setShowScrollButton(true);
+      armAutoHide();
+    }
+  }, [armAutoHide]);
 
   useEffect(() => {
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, []);
+
+  const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isStreaming]);
+    setShowScrollButton(false);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+  };
+
+  // Auto-scroll on new messages/streaming, but only if the user is already
+  // near the bottom — otherwise it would yank them back down while reading.
+  useEffect(() => {
+    if (isNearBottom) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isStreaming, isNearBottom]);
 
   return (
-    <div className="flex-1 flex flex-col min-h-0" style={{ background: "transparent" }}>
+    <div className="flex-1 flex flex-col min-h-0 relative" style={{ background: "transparent" }}>
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto min-h-0 py-6 custom-scrollbar">
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto min-h-0 py-6 custom-scrollbar"
+      >
         {loadingMessages ? (
           <div className="flex items-center justify-center h-full">
             <Loader label="Loading messages…" />
@@ -88,6 +139,25 @@ export default function ChatWindow({ messages, isStreaming, loadingMessages, mes
         )}
         <div ref={bottomRef} />
       </div>
+
+      {showScrollButton && (
+        <button
+          onClick={scrollToBottom}
+          aria-label="Scroll to bottom"
+          className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center w-9 h-9 rounded-full transition-opacity duration-300"
+          style={{
+            bottom: "88px",
+            background: "#1e1e32",
+            border: "1px solid #2e2e4a",
+            color: "#e2e2f0",
+            boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M5 12l7 7 7-7" />
+          </svg>
+        </button>
+      )}
 
       <InputBox onSend={onSend} isStreaming={isStreaming} disabled={loadingMessages} />
     </div>
