@@ -22,6 +22,9 @@ export default function ChatWindow({ messages, isStreaming, loadingMessages, mes
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Set right before every programmatic scrollIntoView call so the scroll
+  // event it triggers doesn't get mistaken for the user scrolling away.
+  const programmaticScrollRef = useRef(false);
 
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -38,6 +41,15 @@ export default function ChatWindow({ messages, isStreaming, loadingMessages, mes
   }, []);
 
   const handleScroll = useCallback(() => {
+    // Ignore scroll events caused by our own scrollIntoView calls — reacting
+    // to them can flip isNearBottom to false mid-stream (the container isn't
+    // done growing yet) and permanently stop auto-scroll for the rest of the
+    // response, since only a real user scroll should ever set it back.
+    if (programmaticScrollRef.current) {
+      programmaticScrollRef.current = false;
+      return;
+    }
+
     const nearBottom = isNearBottomNow();
     setIsNearBottom(nearBottom);
     if (nearBottom) {
@@ -56,16 +68,29 @@ export default function ChatWindow({ messages, isStreaming, loadingMessages, mes
   }, []);
 
   const scrollToBottom = () => {
+    programmaticScrollRef.current = true;
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    setIsNearBottom(true);
     setShowScrollButton(false);
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
   };
 
+  // Sending a message is an explicit signal to jump to the new content,
+  // regardless of where the user was scrolled to reading history.
+  const handleSend = (message: string) => {
+    setIsNearBottom(true);
+    onSend(message);
+  };
+
   // Auto-scroll on new messages/streaming, but only if the user is already
   // near the bottom — otherwise it would yank them back down while reading.
+  // While streaming, jump instantly ("auto") instead of "smooth" — the content
+  // grows on every token, and overlapping smooth animations get interrupted
+  // and stall partway, which is what caused scroll to stop following the text.
   useEffect(() => {
     if (isNearBottom) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      programmaticScrollRef.current = true;
+      bottomRef.current?.scrollIntoView({ behavior: isStreaming ? "auto" : "smooth" });
     }
   }, [messages, isStreaming, isNearBottom]);
 
@@ -110,7 +135,7 @@ export default function ChatWindow({ messages, isStreaming, loadingMessages, mes
               ].map((item) => (
                 <button
                   key={item.text}
-                  onClick={() => onSend(item.text)}
+                  onClick={() => handleSend(item.text)}
                   className="flex items-center gap-2 p-3 rounded-xl text-left transition-colors text-sm"
                   style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(99,102,241,0.4)", color: "#ffffff", backdropFilter: "blur(10px)" }}
                   onMouseEnter={(e) => {
@@ -159,7 +184,7 @@ export default function ChatWindow({ messages, isStreaming, loadingMessages, mes
         </button>
       )}
 
-      <InputBox onSend={onSend} isStreaming={isStreaming} disabled={loadingMessages} />
+      <InputBox onSend={handleSend} isStreaming={isStreaming} disabled={loadingMessages} />
     </div>
   );
 }
