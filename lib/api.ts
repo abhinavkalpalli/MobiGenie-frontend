@@ -47,30 +47,76 @@ function isNetworkError(err: unknown): boolean {
 // Base Fetch
 // ════════════════════════════════════════════
 
+// Dedupe concurrent refresh attempts — if several requests 401 at once,
+// only one /auth/refresh call should fire; the rest await the same promise.
+let refreshPromise: Promise<boolean> | null = null;
+
+async function refreshAccessToken(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const res = await withTimeout(
+          fetch(`${BASE_URL}/auth/refresh`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          }),
+          TIMEOUT_MS,
+        );
+        return res.ok;
+      } catch {
+        return false;
+      } finally {
+        refreshPromise = null;
+      }
+    })();
+  }
+  return refreshPromise;
+}
+
+const doFetch = (endpoint: string, fetchOptions: RequestInit) =>
+  withTimeout(
+    fetch(`${BASE_URL}${endpoint}`, {
+      ...fetchOptions,
+      credentials: "include", // sends httpOnly cookies automatically
+      headers: {
+        "Content-Type": "application/json",
+        ...fetchOptions.headers,
+      },
+    }),
+    TIMEOUT_MS,
+  );
+
 const apiFetch = async (
   endpoint: string,
-  options: RequestInit & { skipGlobal401?: boolean } = {},
+  options: RequestInit & { skipGlobal401?: boolean; skipRefresh?: boolean } = {},
 ): Promise<ApiResponse> => {
-  const { skipGlobal401, ...fetchOptions } = options;
+  const { skipGlobal401, skipRefresh, ...fetchOptions } = options;
 
   let response: Response;
   try {
-    response = await withTimeout(
-      fetch(`${BASE_URL}${endpoint}`, {
-        ...fetchOptions,
-        credentials: "include", // sends httpOnly cookies automatically
-        headers: {
-          "Content-Type": "application/json",
-          ...fetchOptions.headers,
-        },
-      }),
-      TIMEOUT_MS,
-    );
+    response = await doFetch(endpoint, fetchOptions);
   } catch (err) {
     if (isNetworkError(err)) {
       throw new Error("Network error — check your connection and try again.");
     }
     throw err;
+  }
+
+  // Access token expired — try a silent refresh, then retry the original
+  // request once before giving up and sending the user to /login.
+  if (response.status === 401 && !skipRefresh) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      try {
+        response = await doFetch(endpoint, fetchOptions);
+      } catch (err) {
+        if (isNetworkError(err)) {
+          throw new Error("Network error — check your connection and try again.");
+        }
+        throw err;
+      }
+    }
   }
 
   if (!response.ok) {
@@ -129,6 +175,7 @@ export const authApi = {
     return apiFetch("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+      skipRefresh: true,
     });
   },
 
@@ -136,6 +183,7 @@ export const authApi = {
     return apiFetch("/auth/register", {
       method: "POST",
       body: JSON.stringify({ name, email, password }),
+      skipRefresh: true,
     });
   },
 
@@ -321,12 +369,18 @@ export const streamQuery = async (
   const timer = setTimeout(() => controller.abort(), 60000); // 60s for stream
 
   try {
-    let response: Response;
-    try {
-      response = await fetch(`${BASE_URL}/chat/stream?${params.toString()}`, {
+    const doStreamFetch = () =>
+      fetch(`${BASE_URL}/chat/stream?${params.toString()}`, {
         credentials: "include", // sends httpOnly accessToken cookie automatically
         signal: controller.signal,
       });
+
+    let response: Response;
+    try {
+      response = await doStreamFetch();
+      if (response.status === 401 && (await refreshAccessToken())) {
+        response = await doStreamFetch();
+      }
     } catch (err) {
       if ((err as Error)?.name === "AbortError") {
         onError("Request timed out. Please try again.");

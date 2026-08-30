@@ -22,24 +22,11 @@ export function useAuth() {
   }, [router]);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        // Try loading profile — if accessToken cookie is valid, this succeeds
-        await loadProfile();
-      } catch {
-        // Access token expired — try refresh (refreshToken cookie sent automatically)
-        try {
-          await authApi.refreshToken();
-          await loadProfile();
-        } catch {
-          setLoading(false);
-          router.push("/login");
-        }
-      }
-    };
-
-    init();
-  }, [loadProfile, router]);
+    // apiFetch already retries a 401 with a silent /auth/refresh internally,
+    // so loadProfile succeeds as long as the refresh token cookie is still
+    // valid — no need to duplicate that dance here.
+    loadProfile();
+  }, [loadProfile]);
 
   const logout = useCallback(async () => {
     try {
